@@ -67,12 +67,7 @@ icon: ## regenerate build/appicon.png from build/logo.svg (macOS Quick Look)
 clean: ## remove build outputs
 	rm -rf build/bin $(DIST) frontend/dist/* && touch frontend/dist/.keep
 
-release: ## tag VERSION=vX.Y.Z, run checks, build all (no push)
-	@[[ "$(VERSION)" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$$ ]] || { echo "usage: make release VERSION=v0.5.0"; exit 1; }
-	@grep -q "\[$(VERSION:v%=%)\]" CHANGELOG.md || { echo "CHANGELOG.md has no [$(VERSION:v%=%)] entry"; exit 1; }
-	@grep -q '"productVersion": "$(VERSION:v%=%)"' wails.json || { echo "wails.json productVersion is not $(VERSION:v%=%)"; exit 1; }
-	$(MAKE) check test
-	git tag -a $(VERSION) -m "Spean $(VERSION)"
-	@echo "tagged $(VERSION); push with: git push origin $(VERSION)  → CI builds all three platforms and drafts the GitHub Release"
+release: ## publish a version: make release VERSION=0.24.0 (see scripts/release.sh)
+	scripts/release.sh $(VERSION)
 
 .PHONY: help setup dev gen check test lint build adhoc-sign build-all build-linux cross-check run icon clean release

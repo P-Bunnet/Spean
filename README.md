@@ -147,7 +147,7 @@ make check      # go vet + tsc
 make test       # go test ./...
 make gen        # regenerate frontend/wailsjs after changing bound methods
 make build-all  # macOS universal + Linux + Windows into dist/
-make release VERSION=v0.5.0   # checks, tag, build-all (never pushes)
+make release VERSION=0.24.0   # checks, then commit, tag and push: publishes the release
 ```
 
 Things that bite:

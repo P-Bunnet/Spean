@@ -29,5 +29,5 @@ Requirements: https://signpath.org/terms. The repo must be public, and the app m
 4. In GitHub → Settings → Secrets and variables → Actions:
    - Secret `SIGNPATH_API_TOKEN`: the token.
    - Variable `SIGNPATH_ORGANIZATION_ID`: the organization ID. Setting it turns signing on in `release.yml`.
-5. Tag a release, then approve the signing request in SignPath within 4 hours. `release.yml` waits for it.
-6. Bump `productVersion` in `wails.json` with every tag: signing rejects an exe whose version differs from the tag, and `make release` checks it.
+5. Publish a release, then approve the signing request in SignPath within 4 hours. `release.yml` waits for it.
+6. Release with `scripts/release.sh 0.24.0`. It keeps `productVersion` in `wails.json` equal to the tag, which signing checks.
