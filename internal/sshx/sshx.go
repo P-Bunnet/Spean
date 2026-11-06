@@ -69,21 +69,17 @@ func DialChain(hops []config.Hop, target config.Hop, p Prompter, progress func(a
 		}
 		cfg, err := clientConfig(hop, p)
 		if err == nil {
+			var via *ssh.Client
+			if i > 0 {
+				via = chain.Client()
+			}
 			var client *ssh.Client
-			if i == 0 {
-				client, err = ssh.Dial("tcp", hop.Addr, cfg)
-			} else {
-				var nc net.Conn
-				nc, err = chain.Client().Dial("tcp", hop.Addr)
-				if err == nil {
-					var c ssh.Conn
-					var chans <-chan ssh.NewChannel
-					var reqs <-chan *ssh.Request
-					c, chans, reqs, err = ssh.NewClientConn(nc, hop.Addr, cfg)
-					if err == nil {
-						client = ssh.NewClient(c, chans, reqs)
-					}
-				}
+			client, err = dialHop(via, hop.Addr, cfg)
+			if err != nil && strings.Contains(strings.ToLower(err.Error()), "too many authentication failures") {
+				// Every key offered counts against the server's MaxAuthTries (often 6), so a full agent
+				// can get us disconnected before the password prompt. Reconnect and skip the keys.
+				cfg.Auth = passwordMethods(hop, p)
+				client, err = dialHop(via, hop.Addr, cfg)
 			}
 			if err == nil {
 				clients.put(key, client)
@@ -105,6 +101,22 @@ func DialChain(hops []config.Hop, target config.Hop, p Prompter, progress func(a
 		}
 	}
 	return chain, nil
+}
+
+// dialHop opens an SSH connection to addr, through via when it is not the first hop.
+func dialHop(via *ssh.Client, addr string, cfg *ssh.ClientConfig) (*ssh.Client, error) {
+	if via == nil {
+		return ssh.Dial("tcp", addr, cfg)
+	}
+	nc, err := via.Dial("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+	c, chans, reqs, err := ssh.NewClientConn(nc, addr, cfg)
+	if err != nil {
+		return nil, err
+	}
+	return ssh.NewClient(c, chans, reqs), nil
 }
 
 func agentClient() agent.ExtendedAgent {
@@ -201,6 +213,12 @@ func authMethods(hop config.Hop, p Prompter) []ssh.AuthMethod {
 		}
 		return signers, nil
 	}))
+	return append(methods, passwordMethods(hop, p)...)
+}
+
+// passwordMethods: vault password, then password / keyboard-interactive prompts.
+func passwordMethods(hop config.Hop, p Prompter) []ssh.AuthMethod {
+	var methods []ssh.AuthMethod
 	if pw := secret(hop.Alias).Password; pw != "" {
 		methods = append(methods, ssh.Password(pw))
 	}

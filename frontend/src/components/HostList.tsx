@@ -247,7 +247,7 @@ export function HostList({ hosts, status, onConnect, onEdit, onRefresh, onInstal
         }}
       >
         <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search or user@host" spellCheck={false} className="h-8 text-xs" />
-        <Button type="button" size="icon-sm" variant="outline" title="New host" onClick={() => onEdit(null)}>
+        <Button type="button" size="icon" variant="outline" title="New host" onClick={() => onEdit(null)}>
           <Plus />
         </Button>
       </form>

@@ -61,8 +61,9 @@ cross-check: ## vet + build for windows/linux without CGO (catches platform code
 run: build ## build then launch the app
 	open build/bin/spean.app
 
-icon: ## regenerate build/appicon.png from build/logo.svg (macOS Quick Look)
-	qlmanage -t -s 1024 -o build build/logo.svg >/dev/null 2>&1 && mv build/logo.svg.png build/appicon.png
+icon: ## regenerate app icons from build/logo.svg with transparent corners (needs Chrome); Wails remakes icon.ico from appicon.png
+	"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu --hide-scrollbars --force-device-scale-factor=1 --default-background-color=00000000 --window-size=1024,1024 --screenshot="$(PWD)/build/appicon.png" "file://$(PWD)/build/logo.svg"
+	rm -f build/windows/icon.ico
 
 clean: ## remove build outputs
 	rm -rf build/bin $(DIST) frontend/dist/* && touch frontend/dist/.keep

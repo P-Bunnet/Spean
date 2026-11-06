@@ -7,6 +7,11 @@ milestones in `plan.md`.
 
 ## [Unreleased]
 
+### Fixed
+- Sidebar: the **+** button is now the same height as the search box and lines up with it.
+- Windows showed the Wails logo instead of Spean's. The icon is now built from `build/logo.svg`, with transparent corners, which also removes the white corners from the macOS icon.
+- Password logins failed with `Too many authentication failures` when the SSH agent held more keys than the server allows. Spean now reconnects without the keys and asks for the password, or uses the one in the vault.
+
 ## [0.24.0] — 2026-11-06
 
 ### Removed
