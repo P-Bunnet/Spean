@@ -7,6 +7,8 @@ milestones in `plan.md`.
 
 ## [Unreleased]
 
+## [0.24.1] — 2026-11-06
+
 ### Fixed
 - Sidebar: the **+** button is now the same height as the search box and lines up with it.
 - Windows showed the Wails logo instead of Spean's. The icon is now built from `build/logo.svg`, with transparent corners, which also removes the white corners from the macOS icon.

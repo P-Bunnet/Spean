@@ -13,7 +13,7 @@
   "info": {
     "companyName": "P-Bunnet",
     "productName": "Spean",
-    "productVersion": "0.24.0",
+    "productVersion": "0.24.1",
     "copyright": "Copyright \u00a9 2026 P-Bunnet. AGPL-3.0.",
     "comments": "Free, local-first SSH client with unlimited jump-host chaining."
   }
