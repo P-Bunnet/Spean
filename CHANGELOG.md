@@ -7,6 +7,8 @@ milestones in `plan.md`.
 
 ## [Unreleased]
 
+## [0.24.0] — 2026-11-06
+
 ### Removed
 - Login shell hook. Spean no longer types anything into the remote shell at login, so nothing of Spean's is left in the server's shell history. Gone with it: the **Track directory** setting and per-host toggle, file panel ↔ shell directory sync, `cd` back to the last directory on session restore, exit codes, "finished in N s" toasts, and prefilling ★ with the last command. Favorites, runbooks, palette and Docker actions now type whenever the tab is open, without checking for a prompt.
 
