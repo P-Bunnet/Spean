@@ -1,0 +1,7 @@
+[
+  { "name": "status", "cmd": "git status", "run": true },
+  { "name": "pull", "cmd": "git pull --ff-only", "run": true },
+  { "name": "log", "cmd": "git log --oneline -20", "run": true },
+  { "name": "diff", "cmd": "git diff --stat", "run": true },
+  { "name": "checkout", "cmd": "git checkout {{branch}}", "run": false }
+]

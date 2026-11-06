@@ -1,0 +1,9 @@
+[
+  { "name": "ps", "cmd": "docker ps", "run": true },
+  { "name": "logs", "cmd": "docker logs -f --tail 200 {{container}}", "run": true },
+  { "name": "shell", "cmd": "docker exec -it {{container}} sh", "run": true },
+  { "name": "compose up", "cmd": "docker compose up -d", "run": true },
+  { "name": "compose logs", "cmd": "docker compose logs -f", "run": true },
+  { "name": "disk", "cmd": "docker system df", "run": true },
+  { "name": "prune images", "cmd": "docker image prune -f", "run": false }
+]

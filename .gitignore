@@ -1,0 +1,7 @@
+build/bin
+dist/
+node_modules
+frontend/dist/*
+!frontend/dist/.keep
+.DS_Store
+*.p12

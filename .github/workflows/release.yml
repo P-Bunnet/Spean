@@ -1,0 +1,84 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: darwin/universal
+          - os: ubuntu-latest
+            platform: linux/amd64
+          - os: windows-latest
+            platform: windows/amd64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.25' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: npm, cache-dependency-path: frontend/package-lock.json }
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
+      - run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.16.0
+      - run: cd frontend && npm ci
+      - name: build
+        shell: bash
+        run: |
+          V=${GITHUB_REF_NAME}
+          TAGS=""; [ "${{ runner.os }}" = Linux ] && TAGS="-tags webkit2_41"
+          wails build -clean -platform ${{ matrix.platform }} $TAGS -ldflags "-X main.version=$V"
+          mkdir -p dist
+          case "${{ runner.os }}" in
+            macOS)
+              codesign --force --deep --sign - build/bin/spean.app
+              ditto -c -k --keepParent build/bin/spean.app dist/spean-$V-macos-universal.zip ;;
+            Linux)
+              tar -C build/bin -czf dist/spean-$V-linux-amd64.tar.gz spean ;;
+            Windows)
+              7z a dist/spean-$V-windows-amd64.zip ./build/bin/spean.exe ;;
+          esac
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ runner.os }}
+          path: dist/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { path: dist, merge-multiple: true }
+      - name: checksums + cask + winget
+        run: |
+          cd dist && sha256sum * > SHA256SUMS && cd ..
+          V=${GITHUB_REF_NAME}
+          MAC=$(grep macos dist/SHA256SUMS | cut -d' ' -f1)
+          WIN=$(grep windows dist/SHA256SUMS | cut -d' ' -f1)
+          sed -e "s/__VERSION__/${V#v}/g" -e "s/__SHA256__/$MAC/g" packaging/homebrew/spean.rb > dist/spean.rb
+          mkdir -p dist/winget
+          for f in packaging/winget/*.yaml; do sed -e "s/__VERSION__/${V#v}/g" -e "s/__SHA256__/${WIN^^}/g" "$f" > dist/winget/$(basename "$f" | sed "s/__VERSION__/${V#v}/"); done
+      - name: changelog section
+        run: |
+          V=${GITHUB_REF_NAME#v}
+          awk -v v="$V" '/^## \[/{p = index($0, "[" v "]") > 0} p' CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "Spean ${GITHUB_REF_NAME}" > notes.md
+          printf '\n---\n**macOS**: unsigned (no paid Apple ID yet). First launch: right-click the app → Open. Or `brew install --cask P-Bunnet/tap/spean`.\n**Windows**: SmartScreen → More info → Run anyway.\n' >> notes.md
+      - uses: softprops/action-gh-release@v2
+        with:
+          body_path: notes.md
+          files: |
+            dist/*.zip
+            dist/*.tar.gz
+            dist/SHA256SUMS
+            dist/spean.rb
+            dist/winget/*.yaml

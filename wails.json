@@ -1,0 +1,19 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "spean",
+  "outputfilename": "spean",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "P-Bunnet"
+  },
+  "info": {
+    "companyName": "P-Bunnet",
+    "productName": "Spean",
+    "productVersion": "0.23.0",
+    "copyright": "Copyright \u00a9 2026 P-Bunnet. AGPL-3.0.",
+    "comments": "Free, local-first SSH client with unlimited jump-host chaining."
+  }
+}

@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+PackageIdentifier: P-Bunnet.Spean
+PackageVersion: __VERSION__
+PackageLocale: en-US
+Publisher: P-Bunnet
+PublisherUrl: https://github.com/P-Bunnet
+PackageName: Spean
+PackageUrl: https://github.com/P-Bunnet/Spean
+License: AGPL-3.0
+LicenseUrl: https://github.com/P-Bunnet/Spean/blob/main/LICENSE
+ShortDescription: Free, local-first SSH client with unlimited jump-host chaining
+Tags:
+  - ssh
+  - terminal
+  - sftp
+  - docker
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

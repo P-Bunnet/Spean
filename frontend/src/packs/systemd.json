@@ -1,0 +1,5 @@
+[
+  { "name": "status", "cmd": "systemctl status {{unit}}", "run": true },
+  { "name": "restart", "cmd": "sudo systemctl restart {{unit}}", "run": false },
+  { "name": "journal", "cmd": "journalctl -u {{unit}} -f -n 200", "run": true }
+]

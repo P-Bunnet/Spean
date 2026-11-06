@@ -1,0 +1,10 @@
+[
+  { "name": "services", "cmd": "docker service ls", "run": true },
+  { "name": "tasks", "cmd": "docker service ps {{service}} --no-trunc", "run": true },
+  { "name": "svc logs", "cmd": "docker service logs -f --tail 200 {{service}}", "run": true },
+  { "name": "scale", "cmd": "docker service scale {{service}}={{replicas}}", "run": false },
+  { "name": "force update", "cmd": "docker service update --force {{service}}", "run": false },
+  { "name": "stack deploy", "cmd": "docker stack deploy -c {{dropped}} {{stack}}", "run": false },
+  { "name": "stack ps", "cmd": "docker stack ps {{stack}}", "run": true },
+  { "name": "nodes", "cmd": "docker node ls", "run": true }
+]
