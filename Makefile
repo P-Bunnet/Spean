@@ -49,7 +49,7 @@ build-all: ## macOS universal + Windows amd64 from this Mac → dist/ (Linux nee
 	@ls -lh $(DIST)
 
 build-linux: ## Linux amd64 via Docker (GTK/WebKit CGO cannot cross-compile)
-	docker run --rm -v "$(PWD)":/src -w /src golang:1.25 bash -c \
+	docker run --rm -v "$(PWD)":/src -w /src golang:1.26 bash -c \
 	  "apt-get update -qq && apt-get install -y -qq libgtk-3-dev libwebkit2gtk-4.1-dev nodejs npm >/dev/null && \
 	   go install github.com/wailsapp/wails/v2/cmd/wails@v2.16.0 && cd frontend && npm ci && cd .. && \
 	   /go/bin/wails build -clean -platform linux/amd64 -tags webkit2_41 -ldflags '$(LDFLAGS)'"
@@ -70,6 +70,7 @@ clean: ## remove build outputs
 release: ## tag VERSION=vX.Y.Z, run checks, build all (no push)
 	@[[ "$(VERSION)" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$$ ]] || { echo "usage: make release VERSION=v0.5.0"; exit 1; }
 	@grep -q "\[$(VERSION:v%=%)\]" CHANGELOG.md || { echo "CHANGELOG.md has no [$(VERSION:v%=%)] entry"; exit 1; }
+	@grep -q '"productVersion": "$(VERSION:v%=%)"' wails.json || { echo "wails.json productVersion is not $(VERSION:v%=%)"; exit 1; }
 	$(MAKE) check test
 	git tag -a $(VERSION) -m "Spean $(VERSION)"
 	@echo "tagged $(VERSION); push with: git push origin $(VERSION)  → CI builds all three platforms and drafts the GitHub Release"

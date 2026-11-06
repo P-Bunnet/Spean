@@ -17,5 +17,17 @@ Submit the three `winget/*.yaml` files from the release to `microsoft/winget-pkg
 macOS: right-click → Open once (or `xattr -dr com.apple.quarantine Spean.app`). Windows: SmartScreen → More info → Run anyway.
 
 ## SignPath (free Authenticode for open source)
-Apply at signpath.org/open-source once the repo is public and CI is green; then add their signing step
-to `release.yml` for the Windows job.
+Requirements: https://signpath.org/terms. The repo must be public, and the app must already be released in the form to be signed, so the first release ships unsigned.
+
+1. Turn on multi-factor authentication on GitHub. SignPath needs it there and on its own account.
+2. Apply at https://signpath.org/apply.
+3. After approval, in SignPath:
+   - Add the predefined GitHub.com trusted build system and link it to the project.
+   - Create project `spean` with signing policy `release-signing`. Other names need the same change in `release.yml`.
+   - Set `packaging/signpath/artifact-configuration.xml` as the artifact configuration.
+   - Create a CI user with submitter permission and copy its API token.
+4. In GitHub → Settings → Secrets and variables → Actions:
+   - Secret `SIGNPATH_API_TOKEN`: the token.
+   - Variable `SIGNPATH_ORGANIZATION_ID`: the organization ID. Setting it turns signing on in `release.yml`.
+5. Tag a release, then approve the signing request in SignPath within 4 hours. `release.yml` waits for it.
+6. Bump `productVersion` in `wails.json` with every tag: signing rejects an exe whose version differs from the tag, and `make release` checks it.

@@ -16,7 +16,10 @@ milestones in `plan.md`.
 - 22 new themes: 10 classics (Dracula, Nord, Gruvbox Dark, Tokyo Night, One Dark, Monokai, Rosé Pine, Catppuccin Mocha and Latte, Solarized Light) and 12 playful ones (Bubblegum, Cotton Candy, Synthwave, Arcade, Phosphor, Amber CRT, Lava, Deep Sea, Banana, Mint Chocolate, Watermelon, Spooky). The global theme now retints the whole app, not only the terminal; **Spean Dark** looks as before. A per-host theme still changes only that host's terminal.
 - Playful themes have their own art, with no new dependency: a backdrop behind the terminal, sidebar and empty screen (synthwave sun and grid, CRT scanlines and glowing text, starfield, bubbles, embers, moon, scattered icons), a mascot on tabs and the empty screen, and a change to the app's icons and corners (filled and round, blocky and square, or heavier). Backdrops are static. A terminal using a playful theme through a per-host setting gets its backdrop too.
 
+- Release pipeline can sign the Windows exe through SignPath Foundation. It stays off until the project is approved and configured; see `packaging/README.md`.
+
 ### Changed
+- CI takes its Go version from `go.mod`, which needs 1.26.
 - Runbooks: steps up to the next Confirm are typed as one `a && b` line, so the shell stops at the first failure.
 - Drop-to-run removes the uploaded file with `; rm -r <dir>` appended to the command.
 - ⌘R history records the commands Spean typed (favorites, runbooks, palette), not every command run in the shell.

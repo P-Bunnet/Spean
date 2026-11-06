@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
-        with: { go-version: '1.25' }
+        with: { go-version-file: go.mod }
       - uses: actions/setup-node@v4
         with: { node-version: '22', cache: npm, cache-dependency-path: frontend/package-lock.json }
       - if: runner.os == 'Linux'
@@ -31,11 +31,41 @@ jobs:
       - run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.16.0
       - run: cd frontend && npm ci
       - name: build
+        id: build
         shell: bash
         run: |
           V=${GITHUB_REF_NAME}
+          echo "version=${V#v}" >> "$GITHUB_OUTPUT"
           TAGS=""; [ "${{ runner.os }}" = Linux ] && TAGS="-tags webkit2_41"
           wails build -clean -platform ${{ matrix.platform }} $TAGS -ldflags "-X main.version=$V"
+      # SignPath Foundation signing, active once the SIGNPATH_ORGANIZATION_ID variable is set (packaging/README.md).
+      # Until then the exe ships unsigned. Each release waits here for manual approval in SignPath.
+      - name: upload unsigned exe
+        id: unsigned
+        if: runner.os == 'Windows' && vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-windows
+          path: build/bin/spean.exe
+          if-no-files-found: error
+      - name: sign exe
+        if: runner.os == 'Windows' && vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092 # v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: spean
+          signing-policy-slug: release-signing
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 14400
+          output-artifact-directory: build/signed
+          parameters: |
+            version: ${{ toJSON(steps.build.outputs.version) }}
+      - name: package
+        shell: bash
+        run: |
+          V=${GITHUB_REF_NAME}
           mkdir -p dist
           case "${{ runner.os }}" in
             macOS)
@@ -44,7 +74,8 @@ jobs:
             Linux)
               tar -C build/bin -czf dist/spean-$V-linux-amd64.tar.gz spean ;;
             Windows)
-              7z a dist/spean-$V-windows-amd64.zip ./build/bin/spean.exe ;;
+              EXE=build/bin/spean.exe; [ -f build/signed/spean.exe ] && EXE=build/signed/spean.exe
+              7z a dist/spean-$V-windows-amd64.zip "./$EXE" ;;
           esac
       - uses: actions/upload-artifact@v4
         with:
@@ -72,7 +103,7 @@ jobs:
           V=${GITHUB_REF_NAME#v}
           awk -v v="$V" '/^## \[/{p = index($0, "[" v "]") > 0} p' CHANGELOG.md > notes.md
           [ -s notes.md ] || echo "Spean ${GITHUB_REF_NAME}" > notes.md
-          printf '\n---\n**macOS**: unsigned (no paid Apple ID yet). First launch: right-click the app → Open. Or `brew install --cask P-Bunnet/tap/spean`.\n**Windows**: SmartScreen → More info → Run anyway.\n' >> notes.md
+          printf '\n---\n**macOS**: unsigned (no paid Apple ID yet). First launch: right-click the app → Open. Or `brew install --cask P-Bunnet/tap/spean`.\n**Windows**: if SmartScreen warns, More info → Run anyway.\n\n[Code signing policy](https://github.com/P-Bunnet/Spean#code-signing-policy)\n' >> notes.md
       - uses: softprops/action-gh-release@v2
         with:
           body_path: notes.md

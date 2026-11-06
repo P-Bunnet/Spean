@@ -207,6 +207,26 @@ Built with:
 - [ObsidianUI](https://www.obsidianui.dev) — Magnet Tabs, Apple Spotlight, Jelly Loader, Dotted Grid (MIT)
 - `golang.org/x/crypto`, `skeema/knownhosts`, `kevinburke/ssh_config`, `pkg/sftp`
 
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org).
+
+Signing starts once SignPath approves the project; until then Windows builds are unsigned. Only binaries built from this repository by GitHub Actions are submitted for signing.
+
+**Team roles**
+
+| Role | Who |
+|---|---|
+| Authors and committers | [Bunnet Phoung](https://github.com/P-Bunnet) |
+| Reviewers | [Bunnet Phoung](https://github.com/P-Bunnet) |
+| Approvers of each signed release | [Bunnet Phoung](https://github.com/P-Bunnet) |
+
+**Privacy policy**
+
+This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. It connects only to the servers you choose. The update check, off by default, asks GitHub for the latest release tag when you turn it on.
+
+**Uninstalling:** delete the app, or use `brew uninstall --cask spean` or `winget uninstall P-Bunnet.Spean` if you installed it that way. Your data stays in `~/Library/Application Support/spean` on macOS, `%AppData%\spean` on Windows and `~/.config/spean` on Linux until you delete that folder.
+
 ## License
 
 [AGPL-3.0](LICENSE). Use it, fork it, ship it — but a modified Spean you distribute or run as a service must stay open under the same terms. Third-party components keep their own licences (MIT for the ObsidianUI pieces and shadcn/ui; see `go.mod` and `frontend/package.json`).
