@@ -3,7 +3,7 @@ import { MOD } from '@/lib/keys';
 import { History, Pencil, Plus, Star, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DRAG_MIME, type Drag } from '@/components/Pane';
@@ -11,7 +11,7 @@ import type { TermHandle } from '@/components/Term';
 import { packs, type Fav } from '@/packs';
 import { onDrop } from '@/lib/drops';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
-import { Mkdir, ReadHistory, Transfer } from '../../wailsjs/go/main/App';
+import { HistoryAdd, Mkdir, ReadHistory, StepRun, StepStart, StepStop, Transfer } from '../../wailsjs/go/main/App';
 import { EventsOn } from '../../wailsjs/runtime/runtime';
 
 const q = (p: string) => `'${p.replace(/'/g, `'\\''`)}'`;
@@ -43,9 +43,12 @@ export function FavoriteBar({ alias, tabId, term, favorites: hostFavs, onChange,
   const [shake, setShake] = useState<number | null>(null);
   const [busy, setBusy] = useState('');
   const barRef = useRef<HTMLDivElement>(null);
+  const [out, setOut] = useState<{ name: string; cmd: string; text: string; exit?: number; err?: string } | null>(null);
+  const outRun = useRef(''); // open step shell; closing the output dialog stops it
+  const outGen = useRef(0); // bumped on close, so a shell still starting does not run the command
 
   useEffect(() => {
-    if (starSignal) setStar({ name: '', cmd: starText ?? '', run: true });
+    if (starSignal) setStar({ name: '', cmd: starText ?? '', run: true, exec: true });
   }, [starSignal]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (hotkey && favorites[hotkey - 1]) fire(favorites[hotkey - 1], hotkey - 1);
@@ -80,7 +83,35 @@ export function FavoriteBar({ alias, tabId, term, favorites: hostFavs, onChange,
       remembered[alias] = { ...prev, ...values };
       for (const n of names) cmd = cmd.replaceAll(`{{${n}}}`, values[n]);
     }
+    if (f.exec && f.run) return quiet(f.name, cmd);
     if (!term?.run(cmd, f.run)) nope(i);
+  }
+
+  // Outside the shell, so nothing lands in its history. Output goes to a dialog instead of the terminal.
+  async function quiet(name: string, cmd: string) {
+    setOut({ name, cmd, text: '' });
+    let off = () => {};
+    let run = '';
+    const gen = outGen.current;
+    try {
+      run = await StepStart(tabId);
+      if (gen !== outGen.current) return StepStop(run);
+      outRun.current = run;
+      off = EventsOn('step:' + run, (l: string) => setOut((o) => o && { ...o, text: (o.text + l).slice(-1 << 20) }));
+      const r = await StepRun(run, cmd);
+      setOut((o) => o && { ...o, text: r.stdout, exit: r.exit });
+      HistoryAdd(alias, '', cmd, r.exit);
+    } catch (e) {
+      setOut((o) => o && { ...o, err: String(e) });
+    }
+    off();
+    if (run) StepStop(run);
+    if (outRun.current === run) outRun.current = '';
+  }
+  function closeOut() {
+    outGen.current++;
+    if (outRun.current) StepStop(outRun.current);
+    setOut(null);
   }
 
   // Drop-to-run: put the file on the host (unless it is already there), substitute, run; the typed line removes the upload after.
@@ -158,7 +189,7 @@ export function FavoriteBar({ alias, tabId, term, favorites: hostFavs, onChange,
       ))}
       {!favorites.length && <span className="text-muted-foreground">★ add a command, or import from history</span>}
       <span className="ml-auto shrink-0 truncate text-muted-foreground">{busy}</span>
-      <Button size="icon-xs" variant="ghost" title={`Add a favorite (${MOD}⇧S)`} onClick={() => setStar({ name: '', cmd: '', run: true })}>
+      <Button size="icon-xs" variant="ghost" title={`Add a favorite (${MOD}⇧S)`} onClick={() => setStar({ name: '', cmd: '', run: true, exec: true })}>
         <Star />
       </Button>
       <Button size="icon-xs" variant="ghost" title="Import from shell history" onClick={openHistory}>
@@ -167,6 +198,31 @@ export function FavoriteBar({ alias, tabId, term, favorites: hostFavs, onChange,
       <Button size="icon-xs" variant="ghost" title="Edit favorites and packs" onClick={() => setEditing(true)}>
         <Pencil />
       </Button>
+
+      {/* output of a command run outside the shell */}
+      <Dialog open={!!out} onOpenChange={(o) => !o && closeOut()}>
+        <DialogContent className="sm:max-w-2xl">
+          {out && (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {out.name} on {alias}
+                </DialogTitle>
+                <DialogDescription className="font-mono text-xs break-all">{out.cmd}</DialogDescription>
+              </DialogHeader>
+              <pre className="max-h-96 min-h-16 overflow-auto rounded-md bg-muted/40 p-2 font-mono text-xs whitespace-pre-wrap">{out.text.trimEnd()}</pre>
+              <DialogFooter className="items-center">
+                <span className={`mr-auto text-xs ${out.err || out.exit ? 'text-destructive' : out.exit === 0 ? 'text-emerald-400' : 'text-muted-foreground'}`}>
+                  {out.err ?? (out.exit === undefined ? 'running…' : `exit ${out.exit}`)}
+                </span>
+                <Button variant="outline" onClick={closeOut}>
+                  {out.exit === undefined && !out.err ? 'Stop' : 'Close'}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* placeholders */}
       <Dialog open={!!ask} onOpenChange={(o) => !o && ask?.resolve(null)}>
@@ -221,6 +277,10 @@ export function FavoriteBar({ alias, tabId, term, favorites: hostFavs, onChange,
                 <Checkbox checked={star.run} onCheckedChange={(c) => setStar({ ...star, run: !!c })} />
                 Run on click (otherwise leave on the prompt to edit)
               </Label>
+              <Label className="flex items-center gap-2">
+                <Checkbox disabled={!star.run} checked={star.run && !!star.exec} onCheckedChange={(c) => setStar({ ...star, exec: !!c })} />
+                Keep out of shell history (output opens in a window; no sudo prompts or full-screen programs)
+              </Label>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setStar(null)}>
                   Cancel
@@ -251,7 +311,7 @@ export function FavoriteBar({ alias, tabId, term, favorites: hostFavs, onChange,
                   title="Star"
                   onClick={() => {
                     setHist(null);
-                    setStar({ name: h.split(' ').slice(0, 2).join(' '), cmd: h, run: true });
+                    setStar({ name: h.split(' ').slice(0, 2).join(' '), cmd: h, run: true, exec: true });
                   }}
                 >
                   <Star />
@@ -285,9 +345,10 @@ export function FavoriteBar({ alias, tabId, term, favorites: hostFavs, onChange,
               );
             })}
           </div>
+          <p className="text-[11px] text-muted-foreground">Checkboxes: run on click · keep out of shell history (output opens in a window; no sudo prompts or full-screen programs).</p>
           <ul className="grid gap-1">
             {hostFavs.map((f, i) => (
-              <li key={i} className="grid grid-cols-[8rem_1fr_auto_auto] items-center gap-1">
+              <li key={i} className="grid grid-cols-[8rem_1fr_auto_auto_auto] items-center gap-1">
                 <Input value={f.name} onChange={(e) => onChange(hostFavs.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} className="h-7 text-xs" />
                 <Input
                   value={f.cmd}
@@ -296,29 +357,31 @@ export function FavoriteBar({ alias, tabId, term, favorites: hostFavs, onChange,
                   spellCheck={false}
                 />
                 <Checkbox title="Run on click" checked={f.run} onCheckedChange={(c) => onChange(hostFavs.map((x, j) => (j === i ? { ...x, run: !!c } : x)))} />
+                <Checkbox title="Keep out of shell history" disabled={!f.run} checked={f.run && !!f.exec} onCheckedChange={(c) => onChange(hostFavs.map((x, j) => (j === i ? { ...x, exec: !!c } : x)))} />
                 <Button size="icon-xs" variant="ghost" className="text-destructive" onClick={() => onChange(hostFavs.filter((_, j) => j !== i))}>
                   <Trash2 />
                 </Button>
               </li>
             ))}
           </ul>
-          <Button size="sm" variant="outline" className="justify-self-start" onClick={() => onChange([...hostFavs, { name: 'new', cmd: '', run: true }])}>
+          <Button size="sm" variant="outline" className="justify-self-start" onClick={() => onChange([...hostFavs, { name: 'new', cmd: '', run: true, exec: true }])}>
             <Plus /> Add
           </Button>
           <p className="mt-2 text-xs font-medium">Global snippets (every host)</p>
           <ul className="grid gap-1">
             {snippets.map((f, i) => (
-              <li key={i} className="grid grid-cols-[8rem_1fr_auto_auto] items-center gap-1">
+              <li key={i} className="grid grid-cols-[8rem_1fr_auto_auto_auto] items-center gap-1">
                 <Input value={f.name} onChange={(e) => onSnippets(snippets.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} className="h-7 text-xs" />
                 <Input value={f.cmd} onChange={(e) => onSnippets(snippets.map((x, j) => (j === i ? { ...x, cmd: e.target.value } : x)))} className="h-7 font-mono text-xs" spellCheck={false} />
                 <Checkbox title="Run on click" checked={f.run} onCheckedChange={(c) => onSnippets(snippets.map((x, j) => (j === i ? { ...x, run: !!c } : x)))} />
+                <Checkbox title="Keep out of shell history" disabled={!f.run} checked={f.run && !!f.exec} onCheckedChange={(c) => onSnippets(snippets.map((x, j) => (j === i ? { ...x, exec: !!c } : x)))} />
                 <Button size="icon-xs" variant="ghost" className="text-destructive" onClick={() => onSnippets(snippets.filter((_, j) => j !== i))}>
                   <Trash2 />
                 </Button>
               </li>
             ))}
           </ul>
-          <Button size="sm" variant="outline" className="justify-self-start" onClick={() => onSnippets([...snippets, { name: 'new', cmd: '', run: true }])}>
+          <Button size="sm" variant="outline" className="justify-self-start" onClick={() => onSnippets([...snippets, { name: 'new', cmd: '', run: true, exec: true }])}>
             <Plus /> Add snippet
           </Button>
         </DialogContent>

@@ -7,9 +7,31 @@ import { Label } from '@/components/ui/label';
 import { previewSettings, saveSettings, themes, useSettings } from '@/lib/settings';
 import { CheckUpdate, ExportAll, ImportAll, OpenDataDir, VaultForgetKeychain, Version } from '../../wailsjs/go/main/App';
 import { BrowserOpenURL } from '../../wailsjs/runtime/runtime';
+import { decorFor } from '@/components/ThemeDecor';
 import { config } from '../../wailsjs/go/models';
 
 /** One dialog, one settings.json. Changes preview live on open terminals; Cancel reverts. */
+/** Options for a theme picker: playful themes in their own group. */
+export function ThemeOptions() {
+  const names = Object.keys(themes);
+  return (
+    <>
+      <optgroup label="Classic">
+        {names.filter((t) => !themes[t].playful).map((t) => (
+          <option key={t}>{t}</option>
+        ))}
+      </optgroup>
+      <optgroup label="Playful">
+        {names.filter((t) => themes[t].playful).map((t) => (
+          <option key={t} value={t}>
+            {decorFor(t)?.emoji} {t}
+          </option>
+        ))}
+      </optgroup>
+    </>
+  );
+}
+
 export function SettingsDialog({ open, onClose, onImported }: { open: boolean; onClose(): void; onImported(): void }) {
   const saved = useSettings();
   const [d, setD] = useState<config.Settings | null>(null);
@@ -73,9 +95,7 @@ export function SettingsDialog({ open, onClose, onImported }: { open: boolean; o
           </Row>
           <Row label="Theme">
             <select value={d.theme} onChange={(e) => set({ theme: e.target.value })} className="h-7 rounded bg-muted px-1 text-xs">
-              {Object.keys(themes).map((t) => (
-                <option key={t}>{t}</option>
-              ))}
+              <ThemeOptions />
             </select>
           </Row>
           <Row label="Scrollback lines">
@@ -134,7 +154,9 @@ export function SettingsDialog({ open, onClose, onImported }: { open: boolean; o
           </Row>
           <Row label="Updates">
             <span className="flex flex-wrap items-center gap-2">
-              <Checkbox checked={d.updateCheck} onCheckedChange={(c) => set({ updateCheck: !!c })} /> check GitHub for a new release at launch
+              <span className="flex items-center gap-2">
+                <Checkbox checked={d.updateCheck} onCheckedChange={(c) => set({ updateCheck: !!c })} /> check GitHub for a new release at launch
+              </span>
               <Button
                 type="button"
                 size="xs"
@@ -156,6 +178,16 @@ export function SettingsDialog({ open, onClose, onImported }: { open: boolean; o
           </Row>
           <div className="mt-1 grid gap-1 rounded-xl bg-muted/40 p-2 ring-1 ring-white/10">
             <p className="text-[11px] text-muted-foreground">Spean {ver} · AGPL-3.0 · github.com/P-Bunnet/Spean</p>
+            <p className="text-[11px] text-muted-foreground">
+              Created by Bunnet Phoung ·{' '}
+              <button type="button" className="text-brand underline" onClick={() => BrowserOpenURL('https://github.com/P-Bunnet')}>
+                github.com/P-Bunnet
+              </button>{' '}
+              ·{' '}
+              <button type="button" className="text-brand underline" onClick={() => BrowserOpenURL('mailto:bunnetphoung123@gmail.com')}>
+                bunnetphoung123@gmail.com
+              </button>
+            </p>
             <p className="text-[11px] text-muted-foreground">Your data lives outside the app; reinstalling keeps it. Export one file to back up or move machines.</p>
             <div className="flex flex-wrap gap-2">
               <Button type="button" size="sm" variant="outline" onClick={() => ExportAll().then((p) => setMsg(p ? `exported to ${p}` : '')).catch((e) => setMsg(String(e)))}>
@@ -183,7 +215,7 @@ export function SettingsDialog({ open, onClose, onImported }: { open: boolean; o
             {msg && <p className="text-[11px] text-muted-foreground">{msg}</p>}
           </div>
           {err && <p className="text-xs text-destructive">{err}</p>}
-          <DialogFooter>
+          <DialogFooter className="sticky -bottom-4 z-10 bg-popover">
             <Button type="button" variant="outline" onClick={cancel}>
               Cancel
             </Button>

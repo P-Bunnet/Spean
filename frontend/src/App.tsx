@@ -26,6 +26,7 @@ import { DockerPanel } from '@/components/DockerPanel';
 import { Onboarding } from '@/components/Onboarding';
 import { PromptDialog } from '@/components/PromptDialog';
 import { SettingsDialog } from '@/components/SettingsDialog';
+import { decorFor } from '@/components/ThemeDecor';
 import { SplitView } from '@/components/SplitView';
 import { Toasts, type Toast } from '@/components/Toasts';
 import { VaultDialog } from '@/components/VaultDialog';
@@ -39,7 +40,7 @@ import {
 import { BrowserOpenURL, ClipboardSetText, EventsOn } from '../wailsjs/runtime/runtime';
 import { config, main, type forward } from '../wailsjs/go/models';
 import type { Fav } from '@/packs';
-import { loadSettings, saveSettings, themes, useSettings } from '@/lib/settings';
+import { loadSettings, saveSettings, themes, useSettings, applyTheme } from '@/lib/settings';
 
 type Hop = { alias: string; status: 'connecting' | 'ok' | 'error'; err?: string };
 /** One shell. Backend ids, events and Term handles are keyed by sid. */
@@ -528,6 +529,7 @@ export default function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', !light); // portals (dialogs, menus) live outside the root div
   }, [light]);
+  useEffect(() => applyTheme(settings?.theme), [settings?.theme]);
   const topPad = mac ? 28 : 0; // traffic lights sit in the first 28 px of the sidebar / tab bar
   function toggleBroadcast() {
     if (broadcast.size) return setBroadcast(new Set());
@@ -650,6 +652,7 @@ export default function App() {
             activeId={active}
             onSelect={setActive}
             onClose={closeTab}
+            icon={decorFor(settings?.theme)?.mascot}
           />
           <div className="flex items-stretch" style={{ '--wails-draggable': 'no-drag' } as React.CSSProperties}>
           {curTab && (
@@ -803,7 +806,7 @@ export default function App() {
 
       <HistoryPalette open={histOpen} host={curS && !curS.local ? curS.alias : undefined} onClose={() => setHistOpen(false)} onPick={(cmd, go) => curS && run(curS.sid, cmd, go)} />
       {selMenu && <SelectionMenu m={selMenu} onClose={() => setSelMenu(null)} onFiles={(p) => openFilesAt(selMenu.sid, p)} onForward={(port) => forwardAndOpen(selMenu.sid, port)} onStar={(cmd) => { setSelMenu(null); setStarText(cmd); setStarSignal((n) => n + 1); }} onPaste={(t) => Write(selMenu.sid, t)} />}
-      <Runbooks open={runbooks} onClose={() => setRunbooks(false)} host={curS && !curS.closed && !curS.local ? curS.alias : undefined} term={curS ? terms.current[curS.sid] : null} />
+      <Runbooks open={runbooks} onClose={() => setRunbooks(false)} host={curS && !curS.closed && !curS.local ? curS.alias : undefined} term={curS ? terms.current[curS.sid] : null} tabId={curS?.sid} />
       <Toasts items={toasts} onClose={(id) => setToasts((ts) => ts.filter((x) => x.id !== id))} />
       <Spotlight open={spotlight} hosts={hosts} extras={extras} onClose={() => setSpotlight(false)} onPick={(a) => openTab(a)} />
       <PromptDialog onRemember={remember} />

@@ -7,7 +7,8 @@
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
   "author": {
-    "name": "P-Bunnet"
+    "name": "Bunnet Phoung",
+    "email": "bunnetphoung123@gmail.com"
   },
   "info": {
     "companyName": "P-Bunnet",

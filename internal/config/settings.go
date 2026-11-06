@@ -13,7 +13,7 @@ type Settings struct {
 	Version       int    `json:"version"`
 	FontFamily    string `json:"fontFamily"`
 	FontSize      int    `json:"fontSize"`
-	Theme         string `json:"theme"` // preset name, see frontend themes.ts
+	Theme         string `json:"theme"` // preset name, see themes in frontend/src/lib/settings.ts
 	Scrollback    int    `json:"scrollback"`
 	CursorStyle   string `json:"cursorStyle"` // block | underline | bar
 	CursorBlink   bool   `json:"cursorBlink"`

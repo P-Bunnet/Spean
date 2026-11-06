@@ -55,11 +55,12 @@ type App struct {
 	mu      sync.Mutex
 	tabs    map[string]*tab
 	prompts map[string]chan string
+	steps   map[string]*stepShell // open step shells by run id
 	nextID  int
 }
 
 func NewApp() *App {
-	a := &App{tabs: map[string]*tab{}, prompts: map[string]chan string{}}
+	a := &App{tabs: map[string]*tab{}, prompts: map[string]chan string{}, steps: map[string]*stepShell{}}
 	a.xfer = transfer.New(config.LoadSettings().Concurrency) // ponytail: read once; change applies at next launch
 	a.xfer.Resolve = a.fs
 	a.xfer.Emit = func(j *transfer.Job) { runtime.EventsEmit(a.ctx, "transfer:update", j) }

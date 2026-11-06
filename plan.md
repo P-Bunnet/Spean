@@ -30,7 +30,7 @@ This is the one document to read before touching the code. Part 0 is what Spean 
 3. **Decrypted keys live in memory only**, for the session. Never written to disk, never logged.
 4. **Secrets are opt-in and encrypted.** The vault (`vault.json`) is argon2id + XChaCha20-Poly1305 under a master password; the key lives in memory between unlock and `⌘L`. Keychain storage of the master password is a separate opt-in. `ponytail:` comments mark every path secrets flow through.
 5. **Every user prompt is an in-app dialog.** WKWebView has no `alert/confirm/prompt`.
-6. **Nothing is injected into the remote shell.** No login hook, no shell functions, no settings changed: the server's shell history holds only what the user typed or clicked to run. Consequence: Spean cannot tell whether the shell is at a prompt, so `Term.run()` types whenever the tab is open (like Termius/iTerm snippets).
+6. **Nothing is injected into the remote shell.** No login hook, no shell functions, no settings changed: the server's shell history holds only what the user typed or clicked to run. Consequence: Spean cannot tell whether the shell is at a prompt, so `Term.run()` types whenever the tab is open (like Termius/iTerm snippets). Favorites and runbooks can also run in a step shell (`stepShell` in `exec.go`): a separate non-interactive login shell over an exec channel, which keeps them out of the user's shell history and gives real exit codes.
 
 ### How the hop chain works
 

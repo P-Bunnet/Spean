@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Resize, Write } from '../../wailsjs/go/main/App';
 import { BrowserOpenURL, ClipboardSetText, EventsOn } from '../../wailsjs/runtime/runtime';
 import { themes, useSettings } from '@/lib/settings';
+import { ThemeDecor, decorFor } from '@/components/ThemeDecor';
 
 export type TermHandle = {
   write(s: string): void;
@@ -67,7 +68,7 @@ export const Term = forwardRef<TermHandle, Props>(function Term({ id, hidden, cl
   const settings = useSettings();
 
   useEffect(() => {
-    const t = new Terminal({ fontSize: 13, fontFamily: 'Menlo, monospace', theme: themes['Spean Dark'].term, allowProposedApi: true });
+    const t = new Terminal({ fontSize: 13, fontFamily: 'Menlo, monospace', theme: themes['Spean Dark'].term, allowProposedApi: true, allowTransparency: true });
     const fit = new FitAddon();
     const search = new SearchAddon();
     t.loadAddon(fit);
@@ -159,7 +160,10 @@ export const Term = forwardRef<TermHandle, Props>(function Term({ id, hidden, cl
     t.options.scrollback = settings.scrollback;
     t.options.cursorStyle = settings.cursorStyle as 'block' | 'underline' | 'bar';
     t.options.cursorBlink = settings.cursorBlink;
-    t.options.theme = (themes[themeName ?? ''] ?? themes[settings.theme] ?? themes['Spean Dark']).term;
+    const active = themes[themeName ?? ''] ? themeName : settings.theme;
+    const { term: colours } = themes[active ?? ''] ?? themes['Spean Dark'];
+    // Fully transparent, same RGB: the backdrop shows through, and xterm still gets inverse-video text from the opaque colour.
+    t.options.theme = decorFor(active) ? { ...colours, background: colours.background + '00' } : colours;
     fitRef.current?.fit();
   }, [settings, themeName]);
 
@@ -202,9 +206,13 @@ export const Term = forwardRef<TermHandle, Props>(function Term({ id, hidden, cl
   }));
 
   const bg = (themes[themeName ?? '']?.term.background ?? (settings && themes[settings.theme]?.term.background)) ?? '#0a0a0a';
+  const active = themes[themeName ?? ''] ? themeName : settings?.theme;
+  const art = decorFor(active);
   const opts = { decorations: { matchOverviewRuler: '#38bdf8', activeMatchColorOverviewRuler: '#38bdf8' } };
   return (
-    <div className={`relative min-h-0 flex-1 ${hidden ? 'hidden' : 'flex flex-col'}`} style={{ background: bg }}>
+    <div className={`relative isolate min-h-0 flex-1 ${hidden ? 'hidden' : 'flex flex-col'} ${art?.glow ? 'term-glow' : ''}`} style={{ background: bg }}>
+      <ThemeDecor theme={active} where="term" />
+      {art?.scanlines && <div className="crt-lines" />}
       {find !== null && (
         <div className="absolute top-1 right-3 z-10 flex items-center gap-1 rounded-lg bg-popover p-1 ring-1 ring-foreground/10">
           <Input

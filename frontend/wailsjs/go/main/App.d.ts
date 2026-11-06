@@ -133,6 +133,12 @@ export function Snippets():Promise<Array<config.Favorite>>;
 
 export function Star(arg1:string,arg2:boolean):Promise<void>;
 
+export function StepRun(arg1:string,arg2:string):Promise<main.ExecResult>;
+
+export function StepStart(arg1:string):Promise<string>;
+
+export function StepStop(arg1:string):Promise<void>;
+
 export function TestConnection(arg1:string):Promise<Array<main.Progress>>;
 
 export function Transfer(arg1:transfer.Endpoint,arg2:transfer.Endpoint,arg3:boolean):Promise<string>;

@@ -258,6 +258,18 @@ export function Star(arg1, arg2) {
   return window['go']['main']['App']['Star'](arg1, arg2);
 }
 
+export function StepRun(arg1, arg2) {
+  return window['go']['main']['App']['StepRun'](arg1, arg2);
+}
+
+export function StepStart(arg1) {
+  return window['go']['main']['App']['StepStart'](arg1);
+}
+
+export function StepStop(arg1) {
+  return window['go']['main']['App']['StepStop'](arg1);
+}
+
 export function TestConnection(arg1) {
   return window['go']['main']['App']['TestConnection'](arg1);
 }

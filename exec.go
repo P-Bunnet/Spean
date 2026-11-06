@@ -1,13 +1,17 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -310,4 +314,128 @@ func (a *App) ClusterManager(group string) string {
 		a.mu.Unlock()
 	}
 	return first
+}
+
+// ---- step shell ----------------------------------------------------------------
+
+// stepShell runs commands outside the user's shell, so none of them land in its history.
+// It is one non-interactive login shell fed over stdin: login, so PATH matches what the user
+// sees in a tab, and one process for the whole run, so `cd` and `export` carry between steps.
+// No PTY: sudo password prompts and full-screen programs do not work here.
+type stepShell struct {
+	sess  *ssh.Session
+	stdin io.WriteCloser
+	out   *bufio.Reader
+	mark  string // random line prefix that ends a command's output
+}
+
+// Quoted for sh so it also starts from a login shell like fish, which cannot run the steps themselves.
+const stepShellCmd = `sh -c 'case "$SHELL" in */bash|*/zsh) exec "$SHELL" -l;; *) exec sh -l;; esac'`
+
+const stepOutputCap = 1 << 20
+
+func newStepShell(client *ssh.Client) (*stepShell, error) {
+	sess, err := client.NewSession()
+	if err != nil {
+		return nil, err
+	}
+	stdin, err := sess.StdinPipe()
+	if err != nil {
+		sess.Close()
+		return nil, err
+	}
+	stdout, err := sess.StdoutPipe()
+	if err != nil {
+		sess.Close()
+		return nil, err
+	}
+	if err := sess.Start(stepShellCmd); err != nil {
+		sess.Close()
+		return nil, err
+	}
+	nonce := make([]byte, 8)
+	rand.Read(nonce)
+	s := &stepShell{sess: sess, stdin: stdin, out: bufio.NewReader(stdout), mark: fmt.Sprintf("__spean_%x", nonce)}
+	if _, err := s.run("true", func(string) {}); err != nil { // swallows what the login profile prints
+		sess.Close()
+		return nil, err
+	}
+	return s, nil
+}
+
+// run returns once cmd ends. eval keeps a stray quote from swallowing the marker line, and
+// </dev/null keeps cmd from reading the next command out of the shell's own stdin.
+func (s *stepShell) run(cmd string, emit func(string)) (*ExecResult, error) {
+	line := fmt.Sprintf("eval %s </dev/null 2>&1; printf '\\n%s %%s\\n' \"$?\"\n", shq(cmd), s.mark)
+	if _, err := io.WriteString(s.stdin, line); err != nil {
+		return nil, errors.New("step shell has ended")
+	}
+	var out []byte
+	for {
+		// ponytail: line-buffered, so a progress bar without newlines shows only when its line ends.
+		l, err := s.out.ReadString('\n')
+		if code, ok := strings.CutPrefix(l, s.mark+" "); ok {
+			exit, _ := strconv.Atoi(strings.TrimSpace(code))
+			return &ExecResult{Stdout: string(bytes.TrimSuffix(out, []byte("\n"))), Exit: exit}, nil
+		}
+		if l != "" {
+			emit(l)
+			if out = append(out, l...); len(out) > stepOutputCap {
+				out = out[len(out)-stepOutputCap:]
+			}
+		}
+		if err != nil { // the step ended the shell, e.g. `exit 3`
+			werr := s.sess.Wait()
+			r := &ExecResult{Stdout: string(out)}
+			var ee *ssh.ExitError
+			if errors.As(werr, &ee) {
+				r.Exit = ee.ExitStatus()
+			} else if werr != nil {
+				return nil, errors.New("stopped")
+			}
+			return r, nil
+		}
+	}
+}
+
+// StepStart opens a step shell on a connected tab's host and returns its run id.
+// Output streams as step:<run> events.
+func (a *App) StepStart(id string) (string, error) {
+	t := a.get(id)
+	if t == nil || t.chain == nil {
+		return "", errors.New("tab not connected")
+	}
+	s, err := newStepShell(t.chain.Client())
+	if err != nil {
+		return "", err
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.nextID++
+	run := fmt.Sprint("s", a.nextID)
+	a.steps[run] = s
+	return run, nil
+}
+
+// StepRun runs one command in the shell and blocks until it ends. Stdout holds stdout and stderr merged.
+func (a *App) StepRun(run, cmd string) (*ExecResult, error) {
+	a.mu.Lock()
+	s := a.steps[run]
+	a.mu.Unlock()
+	if s == nil {
+		return nil, errors.New("stopped")
+	}
+	return s.run(cmd, func(l string) { runtime.EventsEmit(a.ctx, "step:"+run, l) })
+}
+
+// StepStop closes the shell. A blocked StepRun returns an error.
+// ponytail: closing the channel does not signal the command; `tail -f` ends at its next write.
+func (a *App) StepStop(run string) {
+	a.mu.Lock()
+	s := a.steps[run]
+	delete(a.steps, run)
+	a.mu.Unlock()
+	if s != nil {
+		s.sess.Close()
+	}
 }

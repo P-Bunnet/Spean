@@ -2,7 +2,7 @@
 // via motion layoutId. Extended with a close button and a "closed" (dead session) style.
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { X } from 'lucide-react';
+import { X, type LucideIcon } from 'lucide-react';
 
 export type MagnetTab = { id: string; label: string; closed?: boolean; activity?: 'output' | 'bell' };
 
@@ -11,9 +11,10 @@ type Props = {
   activeId?: string;
   onSelect(id: string): void;
   onClose(id: string): void;
+  icon?: LucideIcon; // the playful theme's mascot, before each label
 };
 
-export function MagnetTabs({ tabs, activeId, onSelect, onClose }: Props) {
+export function MagnetTabs({ tabs, activeId, onSelect, onClose, icon: Icon }: Props) {
   const [hovered, setHovered] = useState<string>();
   return (
     <ul className="flex min-w-0 flex-1 overflow-x-auto">
@@ -35,6 +36,7 @@ export function MagnetTabs({ tabs, activeId, onSelect, onClose }: Props) {
               } ${t.closed ? 'italic' : ''}`}
             >
               {t.activity && <span className={`size-1.5 shrink-0 rounded-full ${t.activity === 'bell' ? 'bg-amber-400' : 'bg-brand'}`} title={t.activity === 'bell' ? 'bell' : 'new output'} />}
+              {Icon && <Icon className="size-3.5 shrink-0 text-brand" />}
               <span className="truncate">{t.label}</span>
               <button
                 onClick={(e) => {

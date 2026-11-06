@@ -1,3 +1,5 @@
+import { useSettings } from '@/lib/settings';
+import { ThemeDecor } from '@/components/ThemeDecor';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, LayoutGrid, List, Pencil, Plus, Star, StickyNote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -51,6 +53,7 @@ const ls = {
 
 /** Sidebar: grouped, collapsible, starred first, drag to reorder saved hosts, list or card view. */
 export function HostList({ hosts, status, onConnect, onEdit, onRefresh, onInstallKey, onManageKeys, onLocal, docker, onDocker, clusters, onCluster, onMulti, mode, topPad }: Props) {
+  const settings = useSettings();
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set(JSON.parse(ls.get('spean.collapsed', '[]'))));
   const [cards, setCards] = useState(() => ls.get('spean.view', 'list') === 'cards');
@@ -192,7 +195,8 @@ export function HostList({ hosts, status, onConnect, onEdit, onRefresh, onInstal
 
   if (mode === 'icons') {
     return (
-      <aside className="flex w-12 shrink-0 flex-col items-center bg-sidebar ring-1 ring-white/10" style={{ paddingTop: topPad, '--wails-draggable': 'drag' } as React.CSSProperties}>
+      <aside className="relative isolate flex w-12 shrink-0 flex-col items-center overflow-hidden bg-sidebar ring-1 ring-white/10" style={{ paddingTop: topPad, '--wails-draggable': 'drag' } as React.CSSProperties}>
+        <ThemeDecor theme={settings?.theme} where="side" />
         <ScrollArea className="min-h-0 flex-1 self-stretch">
           <ul className="flex flex-col items-center gap-1 py-2" style={{ '--wails-draggable': 'no-drag' } as React.CSSProperties}>
             {groups.map((g, gi) => (
@@ -228,7 +232,8 @@ export function HostList({ hosts, status, onConnect, onEdit, onRefresh, onInstal
   }
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col bg-sidebar ring-1 ring-white/10" style={{ paddingTop: topPad, '--wails-draggable': 'drag' } as React.CSSProperties}>
+    <aside className="relative isolate flex w-60 shrink-0 flex-col overflow-hidden bg-sidebar ring-1 ring-white/10" style={{ paddingTop: topPad, '--wails-draggable': 'drag' } as React.CSSProperties}>
+      <ThemeDecor theme={settings?.theme} where="side" />
       <form
         style={{ '--wails-draggable': 'no-drag' } as React.CSSProperties}
         className="flex gap-1.5 p-2"

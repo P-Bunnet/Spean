@@ -48,7 +48,8 @@ type Forward struct {
 type Favorite struct {
 	Name string `json:"name"`
 	Cmd  string `json:"cmd"`
-	Run  bool   `json:"run"` // press Enter after typing
+	Run  bool   `json:"run"`            // press Enter after typing
+	Exec bool   `json:"exec,omitempty"` // run in a step shell, not typed: nothing lands in the shell's history
 }
 
 // hostMeta is Spean-side data for hosts that only exist in ~/.ssh/config (never written there).
@@ -75,6 +76,7 @@ type store struct {
 type Runbook struct {
 	Name  string `json:"name"`
 	Steps []Step `json:"steps"`
+	Exec  bool   `json:"exec,omitempty"` // run in a step shell, not typed: nothing lands in the shell's history
 }
 
 type Step struct {

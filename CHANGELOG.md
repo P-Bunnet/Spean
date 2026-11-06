@@ -10,6 +10,12 @@ milestones in `plan.md`.
 ### Removed
 - Login shell hook. Spean no longer types anything into the remote shell at login, so nothing of Spean's is left in the server's shell history. Gone with it: the **Track directory** setting and per-host toggle, file panel ↔ shell directory sync, `cd` back to the last directory on session restore, exit codes, "finished in N s" toasts, and prefilling ★ with the last command. Favorites, runbooks, palette and Docker actions now type whenever the tab is open, without checking for a prompt.
 
+### Added
+- **Keep out of shell history** for favorites, snippets and runbooks. These run in a separate non-interactive login shell instead of being typed, so nothing lands in the server's shell history. Output opens in a window with the exit code. Runbook steps get their own ✓/✗, stop at the first failure, and `cd` and `export` carry between steps. Sudo password prompts and full-screen programs do not work in this mode. On by default for new favorites and runbooks; existing ones stay typed until ticked.
+- Creator credit in Settings and the README.
+- 22 new themes: 10 classics (Dracula, Nord, Gruvbox Dark, Tokyo Night, One Dark, Monokai, Rosé Pine, Catppuccin Mocha and Latte, Solarized Light) and 12 playful ones (Bubblegum, Cotton Candy, Synthwave, Arcade, Phosphor, Amber CRT, Lava, Deep Sea, Banana, Mint Chocolate, Watermelon, Spooky). The global theme now retints the whole app, not only the terminal; **Spean Dark** looks as before. A per-host theme still changes only that host's terminal.
+- Playful themes have their own art, with no new dependency: a backdrop behind the terminal, sidebar and empty screen (synthwave sun and grid, CRT scanlines and glowing text, starfield, bubbles, embers, moon, scattered icons), a mascot on tabs and the empty screen, and a change to the app's icons and corners (filled and round, blocky and square, or heavier). Backdrops are static. A terminal using a playful theme through a per-host setting gets its backdrop too.
+
 ### Changed
 - Runbooks: steps up to the next Confirm are typed as one `a && b` line, so the shell stops at the first failure.
 - Drop-to-run removes the uploaded file with `; rm -r <dir>` appended to the command.
@@ -17,6 +23,7 @@ milestones in `plan.md`.
 - Docker panel → Containers lists running containers (`docker ps`) by default; a **stopped too** checkbox switches to `docker ps -a`.
 
 ### Fixed
+- Tall dialogs ran past the window, most visibly Settings under the monospace playful themes. Every dialog now scrolls inside the window; **Save** and **Cancel** in Settings stay in view.
 - Launch: restored tabs connected before the vault was unlocked, so Spean asked for a server password it had stored, then for the master password. Connects now wait until the launch unlock is done or skipped.
 - macOS: close, minimize and zoom buttons were missing. `Frameless: true` makes Wails drop the titled window style; the window now only hides its title bar. Tabs no longer sit under the buttons when the sidebar is in icons mode.
 - Terminal bottom was cut off after shrinking the window: the root grid row could not shrink below the terminal's current height, so the terminal never refit. The last row could also clip at some sizes because padding sat on the element `FitAddon` measures.

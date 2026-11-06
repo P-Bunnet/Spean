@@ -36,6 +36,7 @@ export namespace config {
 	    name: string;
 	    cmd: string;
 	    run: boolean;
+	    exec?: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new Favorite(source);
@@ -46,6 +47,7 @@ export namespace config {
 	        this.name = source["name"];
 	        this.cmd = source["cmd"];
 	        this.run = source["run"];
+	        this.exec = source["exec"];
 	    }
 	}
 	export class Forward {
@@ -142,6 +144,7 @@ export namespace config {
 	export class Runbook {
 	    name: string;
 	    steps: Step[];
+	    exec?: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new Runbook(source);
@@ -151,6 +154,7 @@ export namespace config {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
 	        this.steps = this.convertValues(source["steps"], Step);
+	        this.exec = source["exec"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

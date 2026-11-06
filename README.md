@@ -52,7 +52,7 @@ The design goal is simple: one screen, keyboard first, defaults that are already
 | 📓 **Runbooks & notes** | Step-by-step command sequences with checkpoints; free-text notes per host; Ports pane with one-click forwards. |
 | 🔁 **Resilient** | Shared logins per bastion, auto-reconnect with backoff, export/import of everything. |
 | 🐋 **Docker & Swarm panel** | Services, tasks, nodes, stacks, containers as tables; logs, shell, scale, drain from a right-click; shell into a task on the node that runs it; click a published port to forward and open it. |
-| ⚙ **Settings** | Font, theme presets, cursor, scrollback, keepalive, live preview. |
+| ⚙ **Settings** | Font, 25 themes (12 playful, with their own art), cursor, scrollback, keepalive, live preview. |
 | 🔗 **Shared directory** | Click a folder and the shell `cd`s there; `cd` in the shell and the panel follows (OSC 7 prompt hook, bash/zsh). |
 | 🔐 **Host keys verified** | `known_hosts` checked on every hop. First connect shows the fingerprint. Changed keys fail hard. No bypass flag exists. |
 | 🔑 **Agent first** | `ssh-agent`, then identity files, then password / keyboard-interactive. Agent forwarding per host. |
@@ -198,6 +198,10 @@ Early, moving fast. Everything through v0.23 is built and type-checked; end-to-e
 Issues and PRs welcome. Read `plan.md` first: it holds the design rules (host keys are always verified, secrets never touch disk unencrypted, every user prompt goes through `PromptDialog`) and the reasoning behind the stack. `make check test` must pass; `make cross-check` keeps Windows/Linux compiling.
 
 ## Credits
+
+Created by **Bunnet Phoung** — [github.com/P-Bunnet](https://github.com/P-Bunnet) · [bunnetphoung123@gmail.com](mailto:bunnetphoung123@gmail.com)
+
+Built with:
 
 - [Wails](https://wails.io), [xterm.js](https://xtermjs.org), [shadcn/ui](https://ui.shadcn.com)
 - [ObsidianUI](https://www.obsidianui.dev) — Magnet Tabs, Apple Spotlight, Jelly Loader, Dotted Grid (MIT)

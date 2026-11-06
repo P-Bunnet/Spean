@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { DeleteHost, ListKeys, SaveHost, SavedHost, TestConnection } from '../../wailsjs/go/main/App';
 import { config } from '../../wailsjs/go/models';
-import { themes } from '@/lib/settings';
+import { ThemeOptions } from '@/components/SettingsDialog';
 
 const empty = (): config.SavedHost =>
   new config.SavedHost({ label: '', address: '', port: '', user: '', key: '', jump: '', group: '', tags: [], forwardAgent: false, snippet: '', forwards: [], dockerSock: '' });
@@ -141,7 +141,7 @@ export function HostEditor({ open, label, hosts, onClose, onSaved, onManageKeys,
     <span key={key} className="flex items-center gap-1.5">
       <span
         className={`max-w-32 truncate rounded-full px-2.5 py-0.5 text-xs ring-1 ${
-          r?.status === 'ok' ? 'bg-emerald-500/15 ring-emerald-500/40' : r?.status === 'error' ? 'bg-red-500/15 ring-red-500/40' : last ? 'brand-grad text-white ring-transparent' : 'bg-muted ring-white/10'
+          r?.status === 'ok' ? 'bg-emerald-500/15 ring-emerald-500/40' : r?.status === 'error' ? 'bg-red-500/15 ring-red-500/40' : last ? 'brand-grad text-brand-fg ring-transparent' : 'bg-muted ring-white/10'
         }`}
         title={r?.err || name}
       >
@@ -337,9 +337,7 @@ export function HostEditor({ open, label, hosts, onClose, onSaved, onManageKeys,
                 Terminal theme
                 <select value={h.theme ?? ''} onChange={(e) => setH({ ...h, theme: e.target.value } as config.SavedHost)} className="h-7 rounded bg-muted px-1 text-xs">
                   <option value="">default</option>
-                  {Object.keys(themes).map((t) => (
-                    <option key={t}>{t}</option>
-                  ))}
+                  <ThemeOptions />
                 </select>
               </Label>
             </div>
@@ -368,7 +366,7 @@ export function HostEditor({ open, label, hosts, onClose, onSaved, onManageKeys,
               <Button type="submit" variant="outline" disabled={loop}>
                 Save
               </Button>
-              <Button type="button" className="brand-grad text-white" disabled={loop || !h.label.trim() || !h.address.trim()} onClick={() => save(undefined, true)}>
+              <Button type="button" className="brand-grad text-brand-fg" disabled={loop || !h.label.trim() || !h.address.trim()} onClick={() => save(undefined, true)}>
                 Save & connect
               </Button>
             </div>
